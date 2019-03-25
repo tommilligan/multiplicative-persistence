@@ -12,7 +12,7 @@ jobs:
       - run: make integrate
       - save_cache:
           paths:
-            - "~/.cargo"
+            - "${CARGO_HOME:-~/.cargo}/registry"
             - "target"
           key: cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
 workflows:
