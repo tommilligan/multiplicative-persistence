@@ -1,4 +1,5 @@
 /// An iterator for all the `n`-length combinations of a collection, with replacement.
+#[derive(Debug, Clone)]
 pub struct CombinationsWithReplacement<T: Copy> {
     empty: bool,
     pool: Vec<T>,

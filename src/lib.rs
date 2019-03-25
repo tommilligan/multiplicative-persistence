@@ -9,7 +9,7 @@ use num_traits::Num;
 pub mod combinations_wr;
 
 lazy_static! {
-    pub static ref DIGITS_HEAD: &'static [char; 3] = &['2', '3', '4'];
+    pub static ref DIGITS_HEAD: &'static [&'static str; 4] = &["", "2", "3", "4"];
     pub static ref DIGITS_TAIL: &'static [char; 4] = &['6', '7', '8', '9'];
     static ref BIG_UINT_NINE: BigUint = BigUint::from(9 as usize);
 }
