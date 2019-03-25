@@ -7,14 +7,14 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
+            - cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}-v1
       - run: make test
       - run: make integrate
       - save_cache:
           paths:
-            - "${CARGO_HOME:-~/.cargo}/registry"
+            - "/usr/local/cargo/registry"
             - "target"
-          key: cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
+          key: cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}-v1
 workflows:
   version: 2
   build-and-deploy:
