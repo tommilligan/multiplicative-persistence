@@ -1,11 +1,17 @@
 /// An iterator for all the `n`-length combinations of a collection, with replacement.
 #[derive(Debug, Clone)]
 pub struct CombinationsWithReplacement<T: Copy> {
+    // Derived value, whether the iterator will have no values
     empty: bool,
+    // Collection of (probably) unique elements
     pool: Vec<T>,
+    // Vector of indexes of pool
     mask: Vec<usize>,
+    // The length of our output combination
     mask_length: usize,
+    // The max value of any single int in our mask
     mask_max_value: usize,
+    // Whether this is the first iteration
     starting: bool,
 }
 
@@ -25,7 +31,7 @@ impl<T: Copy> CombinationsWithReplacement<T> {
         }
     }
 
-    /// Return the current combination
+    /// Map the current mask over the pool to get an output combination
     fn current(&self) -> Vec<T> {
         self.mask.iter().map(|i| self.pool[*i]).collect()
     }

@@ -15,7 +15,7 @@ use multiplicative_persistence::{multiplicative_persistence, DIGITS_HEAD, DIGITS
 
 #[derive(Debug)]
 struct SearchMessage {
-    input: String,
+    candidate: String,
     mp: usize,
 }
 
@@ -30,17 +30,20 @@ fn search_round(tx: Sender<SearchMessage>, n: usize) -> () {
     for head in DIGITS_HEAD.iter() {
         let combinations = tail_combinations.clone();
         for combination in combinations {
-            let mut input: String = head.to_string();
+            let mut candidate: String = head.to_string();
             let tail: String = combination.iter().collect();
-            input.push_str(&tail);
+            candidate.push_str(&tail);
 
             // Calculate mp from an interger held as a string
-            let result = multiplicative_persistence(&input);
+            let result = multiplicative_persistence(&candidate);
             // If we have a potentially better value, report it
             if result > current_max {
                 current_max = result;
-                tx.send(SearchMessage { input, mp: result })
-                    .expect("Failed to send SearchMessage");
+                tx.send(SearchMessage {
+                    candidate,
+                    mp: result,
+                })
+                .expect("Failed to send SearchMessage");
             }
         }
     }
@@ -69,10 +72,10 @@ fn search(from_round: usize, num_rounds: usize, n_workers: usize) -> () {
         loop {
             match rx.recv() {
                 // Validate this worker's result with parent state
-                Ok(SearchMessage { input, mp }) => {
+                Ok(SearchMessage { candidate, mp }) => {
                     if mp > current_max {
                         current_max += 1;
-                        println!("{} {}", mp, input);
+                        println!("{} {}", mp, candidate);
                     }
                 }
                 // As soon as we get something other than a result
@@ -115,7 +118,7 @@ pub fn main() {
             SubCommand::with_name("for")
                 .about("Get multiplicative persistence for a positive integer")
                 .arg(
-                    Arg::with_name("integer")
+                    Arg::with_name("candidate")
                         .help("The integer to process")
                         .index(1)
                         .required(true),
@@ -126,8 +129,8 @@ pub fn main() {
     if let (subcommand_name, Some(subcommand_matches)) = matches.subcommand() {
         match subcommand_name {
             "for" => {
-                let input_integer: &str = subcommand_matches.value_of("integer").unwrap();
-                println!("{}", multiplicative_persistence(input_integer));
+                let candidate: &str = subcommand_matches.value_of("candidate").unwrap();
+                println!("{}", multiplicative_persistence(candidate));
             }
             "search" => {
                 let from_round: usize = subcommand_matches

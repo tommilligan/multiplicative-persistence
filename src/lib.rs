@@ -23,13 +23,13 @@ pub fn multiply_digits(a: &BigUint) -> BigUint {
 }
 
 /// Return the multiplicative persistence of a positive integer given as a string.
-pub fn multiplicative_persistence(int_as_str: &str) -> usize {
-    let mut current_int: BigUint =
-        Num::from_str_radix(int_as_str, 10).expect("Could not convert string to BigUint");
+pub fn multiplicative_persistence(candidate: &str) -> usize {
+    let mut derived_int: BigUint =
+        Num::from_str_radix(candidate, 10).expect("Could not convert candidate to BigUint");
 
     let mut counter: usize = 0;
-    while current_int > *BIG_UINT_NINE {
-        current_int = multiply_digits(&current_int);
+    while derived_int > *BIG_UINT_NINE {
+        derived_int = multiply_digits(&derived_int);
         counter += 1;
     }
     counter
