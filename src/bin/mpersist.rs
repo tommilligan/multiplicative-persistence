@@ -1,37 +1,85 @@
 extern crate clap;
+extern crate num_cpus;
+extern crate threadpool;
 
 extern crate multiplicative_persistence;
 
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::time::Instant;
 
 use clap::{App, Arg, SubCommand};
+use threadpool::ThreadPool;
 
 use multiplicative_persistence::combinations_wr::CombinationsWithReplacement;
 use multiplicative_persistence::{multiplicative_persistence, DIGITS_HEAD, DIGITS_TAIL};
 
-fn search(from_round: usize, num_rounds: usize) -> () {
+#[derive(Debug)]
+struct SearchMessage {
+    input: String,
+    mp: usize,
+}
+
+fn search_round(tx: Sender<SearchMessage>, n: usize) -> () {
+    let round_start = Instant::now();
+
+    // Only send messages with potentially higher mp
     let mut current_max = 2;
-    for n in from_round..(from_round + num_rounds) {
-        let round_start = Instant::now();
-        let tail_combinations = CombinationsWithReplacement::new(DIGITS_TAIL.to_vec(), n);
-        for head in DIGITS_HEAD.iter() {
-            let combinations = tail_combinations.clone();
-            for combination in combinations {
-                let mut input: String = head.to_string();
-                let tail: String = combination.iter().collect();
-                input.push_str(&tail);
-                let result = multiplicative_persistence(&input);
-                if result > current_max {
-                    current_max = result;
-                    println!("{} {}", &result, &input);
-                }
+
+    // Iterate through integers in ascending order
+    let tail_combinations = CombinationsWithReplacement::new(DIGITS_TAIL.to_vec(), n);
+    for head in DIGITS_HEAD.iter() {
+        let combinations = tail_combinations.clone();
+        for combination in combinations {
+            let mut input: String = head.to_string();
+            let tail: String = combination.iter().collect();
+            input.push_str(&tail);
+
+            // Calculate mp from an interger held as a string
+            let result = multiplicative_persistence(&input);
+            // If we have a potentially better value, report it
+            if result > current_max {
+                current_max = result;
+                tx.send(SearchMessage { input, mp: result })
+                    .expect("Failed to send SearchMessage");
             }
         }
-        eprintln!(
-            "Round {} completed: {}ms",
-            n,
-            round_start.elapsed().as_millis()
-        );
+    }
+
+    eprintln!(
+        "info: round {} complete in {}ms",
+        n,
+        round_start.elapsed().as_millis()
+    );
+}
+
+/// Multithreaded search for integers with higher multiplicative persistence values.
+fn search(from_round: usize, num_rounds: usize, n_workers: usize) -> () {
+    let pool = ThreadPool::new(n_workers);
+    let mut receivers: Vec<Receiver<SearchMessage>> = Vec::new();
+
+    for n in from_round..(from_round + num_rounds) {
+        let (tx, rx): (Sender<SearchMessage>, Receiver<SearchMessage>) = channel();
+        pool.execute(move || search_round(tx, n));
+        receivers.push(rx);
+    }
+
+    let mut current_max = 2;
+    // Read results from our workers in order
+    for rx in receivers {
+        loop {
+            match rx.recv() {
+                // Validate this worker's result with parent state
+                Ok(SearchMessage { input, mp }) => {
+                    if mp > current_max {
+                        current_max += 1;
+                        println!("{} {}", mp, input);
+                    }
+                }
+                // As soon as we get something other than a result
+                // this worker is complete, move on
+                _ => break,
+            }
+        }
     }
 }
 
@@ -43,17 +91,24 @@ pub fn main() {
                 .about("Search for the lowest integer with each multiplicative persistence value")
                 .arg(
                     Arg::with_name("from_round")
-                        .help("The search round to start from (length of integer in digits)")
+                        .help("Search round to start from (length of integer in digits)")
                         .takes_value(true)
                         .short("f")
                         .long("from-round"),
                 )
                 .arg(
                     Arg::with_name("rounds")
-                        .help("The number of search rounds to perform")
+                        .help("Number of search rounds to perform")
                         .takes_value(true)
                         .short("n")
                         .long("rounds"),
+                )
+                .arg(
+                    Arg::with_name("threads")
+                        .help("Number of threads to use. Default or 0 uses all cores.")
+                        .takes_value(true)
+                        .short("t")
+                        .long("threads"),
                 ),
         )
         .subcommand(
@@ -84,8 +139,21 @@ pub fn main() {
                     .value_of("rounds")
                     .unwrap_or("15")
                     .parse()
-                    .expect("Invalid integer from rounds");
-                search(from_round, num_rounds)
+                    .expect("Invalid integer for rounds");
+                let mut threads: usize = subcommand_matches
+                    .value_of("threads")
+                    .unwrap_or("0")
+                    .parse()
+                    .expect("Invalid integer for threads");
+
+                let available_cpus = num_cpus::get();
+                if threads == 0 {
+                    threads = available_cpus;
+                } else if threads > num_cpus::get() {
+                    panic!("Invalid number of threads given.")
+                }
+
+                search(from_round, num_rounds, threads)
             }
             _ => eprintln!("Invalid subcommand."),
         }
