@@ -5,4 +5,5 @@ integrate:
 	diff /tmp/mpersist.stdout integrate/mpersist.stdout
 
 test:
-	cargo test
+	cargo fmt -- --check
+	cargo test --locked

@@ -47,32 +47,81 @@ pub struct SearchMessage {
     pub mp: usize,
 }
 
+/// An iterator for all search candidates in round n. These follow the pattern
+/// of one optional head digit, followed by n optional tail digits.
+///
+/// - round 1: 6, 7, ..., 9, 26, 27, ..., 49
+/// - round 2: 66, 67, ..., 99, 266, 267, ..., 499
+#[derive(Debug, Clone)]
+pub struct Candidates<'a> {
+    // Cloneable tails iterator, used to restart tails multiple times
+    fresh_tails: CombinationsWithReplacement<char>,
+    // Heads that we need to iterate over once
+    heads: std::slice::Iter<'a, &'a str>,
+    current_head: &'a str,
+    // The current set of tails we are iterating through
+    tails: CombinationsWithReplacement<char>,
+}
+
+impl<'a> Candidates<'a> {
+    pub fn new(n: usize) -> Candidates<'a> {
+        let mut heads = DIGITS_HEAD.iter();
+        let fresh_tails = CombinationsWithReplacement::new(DIGITS_TAIL.to_vec(), n);
+        Candidates {
+            current_head: heads.next().expect("Heads had no items"),
+            heads,
+            tails: fresh_tails.clone(),
+
+            fresh_tails,
+        }
+    }
+}
+
+impl<'a> Iterator for Candidates<'a> {
+    type Item = String;
+
+    fn next(&mut self) -> Option<String> {
+        loop {
+            match self.tails.next() {
+                // If we have another tail combination, combine with head and return
+                Some(tail_combination) => {
+                    let mut candidate: String = self.current_head.to_string();
+                    let tail: String = tail_combination.iter().collect();
+                    candidate.push_str(&tail);
+                    return Some(candidate);
+                }
+                // If we've exhausted our set of tail combinations
+                // Go to the next head and start tail combinations again
+                None => {
+                    match self.heads.next() {
+                        Some(new_head) => self.current_head = new_head,
+                        // If we have no more heads, we're done
+                        None => return None,
+                    };
+                    self.tails = self.fresh_tails.clone();
+                }
+            }
+        }
+    }
+}
+
 pub fn search_round(tx: Sender<SearchMessage>, n: usize) -> () {
     let round_start = Instant::now();
 
     // Only send messages with potentially higher mp
     let mut current_max = 2;
 
-    // Iterate through integers in ascending order
-    let tail_combinations = CombinationsWithReplacement::new(DIGITS_TAIL.to_vec(), n);
-    for head in DIGITS_HEAD.iter() {
-        let combinations = tail_combinations.clone();
-        for combination in combinations {
-            let mut candidate: String = head.to_string();
-            let tail: String = combination.iter().collect();
-            candidate.push_str(&tail);
-
-            // Calculate mp from an interger held as a string
-            let result = multiplicative_persistence(&candidate);
-            // If we have a potentially better value, report it
-            if result > current_max {
-                current_max = result;
-                tx.send(SearchMessage {
-                    candidate,
-                    mp: result,
-                })
-                .expect("Failed to send SearchMessage");
-            }
+    for candidate in Candidates::new(n) {
+        // Calculate mp from an interger held as a string
+        let result = multiplicative_persistence(&candidate);
+        // If we have a potentially better value, report it
+        if result > current_max {
+            current_max = result;
+            tx.send(SearchMessage {
+                candidate,
+                mp: result,
+            })
+            .expect("Failed to send SearchMessage");
         }
     }
 
@@ -113,4 +162,17 @@ mod tests {
         assert_eq!(multiply_digits(&big(12345)), big(120));
     }
 
+    #[test]
+    fn test_candidates() {
+        let candidates: Vec<String> = Candidates::new(1).collect();
+        let expected: Vec<String> = vec![
+            "6", "7", "8", "9", "26", "27", "28", "29", "36", "37", "38", "39", "46", "47", "48",
+            "49",
+        ]
+        .into_iter()
+        .map(|s| s.to_owned())
+        .collect();
+
+        assert_eq!(candidates, expected);
+    }
 }
