@@ -5,55 +5,11 @@ extern crate threadpool;
 extern crate multiplicative_persistence;
 
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::time::Instant;
 
 use clap::{App, Arg, SubCommand};
 use threadpool::ThreadPool;
 
-use multiplicative_persistence::combinations_wr::CombinationsWithReplacement;
-use multiplicative_persistence::{multiplicative_persistence, DIGITS_HEAD, DIGITS_TAIL};
-
-#[derive(Debug)]
-struct SearchMessage {
-    candidate: String,
-    mp: usize,
-}
-
-fn search_round(tx: Sender<SearchMessage>, n: usize) -> () {
-    let round_start = Instant::now();
-
-    // Only send messages with potentially higher mp
-    let mut current_max = 2;
-
-    // Iterate through integers in ascending order
-    let tail_combinations = CombinationsWithReplacement::new(DIGITS_TAIL.to_vec(), n);
-    for head in DIGITS_HEAD.iter() {
-        let combinations = tail_combinations.clone();
-        for combination in combinations {
-            let mut candidate: String = head.to_string();
-            let tail: String = combination.iter().collect();
-            candidate.push_str(&tail);
-
-            // Calculate mp from an interger held as a string
-            let result = multiplicative_persistence(&candidate);
-            // If we have a potentially better value, report it
-            if result > current_max {
-                current_max = result;
-                tx.send(SearchMessage {
-                    candidate,
-                    mp: result,
-                })
-                .expect("Failed to send SearchMessage");
-            }
-        }
-    }
-
-    eprintln!(
-        "info: round {} complete in {}ms",
-        n,
-        round_start.elapsed().as_millis()
-    );
-}
+use multiplicative_persistence::{multiplicative_persistence, search_round, SearchMessage};
 
 /// Multithreaded search for integers with higher multiplicative persistence values.
 fn search(from_round: usize, num_rounds: usize, n_workers: usize) -> () {

@@ -1,16 +1,22 @@
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+extern crate log;
 extern crate num_bigint;
 extern crate num_traits;
 
 use num_bigint::BigUint;
 use num_traits::Num;
+use std::sync::mpsc::Sender;
+use std::time::Instant;
 
 pub mod combinations_wr;
 
+use combinations_wr::CombinationsWithReplacement;
+
 lazy_static! {
-    pub static ref DIGITS_HEAD: &'static [&'static str; 4] = &["", "2", "3", "4"];
-    pub static ref DIGITS_TAIL: &'static [char; 4] = &['6', '7', '8', '9'];
+    static ref DIGITS_HEAD: &'static [&'static str; 4] = &["", "2", "3", "4"];
+    static ref DIGITS_TAIL: &'static [char; 4] = &['6', '7', '8', '9'];
     static ref BIG_UINT_NINE: BigUint = BigUint::from(9 as usize);
 }
 
@@ -33,6 +39,48 @@ pub fn multiplicative_persistence(candidate: &str) -> usize {
         counter += 1;
     }
     counter
+}
+
+#[derive(Debug)]
+pub struct SearchMessage {
+    pub candidate: String,
+    pub mp: usize,
+}
+
+pub fn search_round(tx: Sender<SearchMessage>, n: usize) -> () {
+    let round_start = Instant::now();
+
+    // Only send messages with potentially higher mp
+    let mut current_max = 2;
+
+    // Iterate through integers in ascending order
+    let tail_combinations = CombinationsWithReplacement::new(DIGITS_TAIL.to_vec(), n);
+    for head in DIGITS_HEAD.iter() {
+        let combinations = tail_combinations.clone();
+        for combination in combinations {
+            let mut candidate: String = head.to_string();
+            let tail: String = combination.iter().collect();
+            candidate.push_str(&tail);
+
+            // Calculate mp from an interger held as a string
+            let result = multiplicative_persistence(&candidate);
+            // If we have a potentially better value, report it
+            if result > current_max {
+                current_max = result;
+                tx.send(SearchMessage {
+                    candidate,
+                    mp: result,
+                })
+                .expect("Failed to send SearchMessage");
+            }
+        }
+    }
+
+    info!(
+        "info: round {} complete in {}ms",
+        n,
+        round_start.elapsed().as_millis()
+    );
 }
 
 #[cfg(test)]
