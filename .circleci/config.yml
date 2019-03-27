@@ -8,6 +8,7 @@ jobs:
       - restore_cache:
           keys:
             - cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}-v1
+      - run: make dev
       - run: make test
       - run: make integrate
       - save_cache:

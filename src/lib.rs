@@ -41,10 +41,10 @@ pub fn multiplicative_persistence(candidate: &str) -> usize {
     counter
 }
 
-#[derive(Debug)]
-pub struct SearchMessage {
+#[derive(Debug, PartialEq)]
+pub struct SearchResult {
     pub candidate: String,
-    pub mp: usize,
+    pub multiplicative_persistence: usize,
 }
 
 /// An iterator for all search candidates in round n. These follow the pattern
@@ -105,24 +105,49 @@ impl<'a> Iterator for Candidates<'a> {
     }
 }
 
-pub fn search_round(tx: Sender<SearchMessage>, n: usize) -> () {
-    let round_start = Instant::now();
+struct SearchRound<'a> {
+    candidates: Candidates<'a>,
+    current_max: usize,
+}
 
-    // Only send messages with potentially higher mp
-    let mut current_max = 2;
-
-    for candidate in Candidates::new(n) {
-        // Calculate mp from an interger held as a string
-        let result = multiplicative_persistence(&candidate);
-        // If we have a potentially better value, report it
-        if result > current_max {
-            current_max = result;
-            tx.send(SearchMessage {
-                candidate,
-                mp: result,
-            })
-            .expect("Failed to send SearchMessage");
+impl<'a> SearchRound<'a> {
+    pub fn new(n: usize) -> SearchRound<'a> {
+        SearchRound {
+            candidates: Candidates::new(n),
+            current_max: 2,
         }
+    }
+}
+
+// Only send messages with potentially higher mp
+impl<'a> Iterator for SearchRound<'a> {
+    type Item = SearchResult;
+
+    fn next(&mut self) -> Option<SearchResult> {
+        loop {
+            match self.candidates.next() {
+                Some(candidate) => {
+                    let result = multiplicative_persistence(&candidate);
+                    // If we have a potentially better value, report it
+                    if result > self.current_max {
+                        self.current_max = result;
+                        return Some(SearchResult {
+                            candidate,
+                            multiplicative_persistence: result,
+                        });
+                    }
+                }
+                None => return None,
+            }
+        }
+    }
+}
+
+/// Search all candidates in a given round, and reopost
+pub fn search_round(tx: Sender<SearchResult>, n: usize) -> () {
+    let round_start = Instant::now();
+    for message in SearchRound::new(n) {
+        tx.send(message).expect("Failed to send SearchResult");
     }
 
     info!(
@@ -174,5 +199,15 @@ mod tests {
         .collect();
 
         assert_eq!(candidates, expected);
+    }
+
+    #[test]
+    fn test_search_round() {
+        let results: Vec<SearchResult> = SearchRound::new(1).collect();
+        let expected = vec![SearchResult {
+            candidate: "39".to_owned(),
+            multiplicative_persistence: 3,
+        }];
+        assert_eq!(results, expected);
     }
 }

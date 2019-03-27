@@ -9,15 +9,15 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use clap::{App, Arg, SubCommand};
 use threadpool::ThreadPool;
 
-use multiplicative_persistence::{multiplicative_persistence, search_round, SearchMessage};
+use multiplicative_persistence::{multiplicative_persistence, search_round, SearchResult};
 
 /// Multithreaded search for integers with higher multiplicative persistence values.
 fn search(from_round: usize, num_rounds: usize, n_workers: usize) -> () {
     let pool = ThreadPool::new(n_workers);
-    let mut receivers: Vec<Receiver<SearchMessage>> = Vec::new();
+    let mut receivers: Vec<Receiver<SearchResult>> = Vec::new();
 
     for n in from_round..(from_round + num_rounds) {
-        let (tx, rx): (Sender<SearchMessage>, Receiver<SearchMessage>) = channel();
+        let (tx, rx): (Sender<SearchResult>, Receiver<SearchResult>) = channel();
         pool.execute(move || search_round(tx, n));
         receivers.push(rx);
     }
@@ -28,10 +28,13 @@ fn search(from_round: usize, num_rounds: usize, n_workers: usize) -> () {
         loop {
             match rx.recv() {
                 // Validate this worker's result with parent state
-                Ok(SearchMessage { candidate, mp }) => {
-                    if mp > current_max {
+                Ok(SearchResult {
+                    candidate,
+                    multiplicative_persistence,
+                }) => {
+                    if multiplicative_persistence > current_max {
                         current_max += 1;
-                        println!("{} {}", mp, candidate);
+                        println!("{} {}", multiplicative_persistence, candidate);
                     }
                 }
                 // As soon as we get something other than a result

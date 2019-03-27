@@ -1,4 +1,7 @@
-.PHONY: help clean coverage dev integrate lint package package-install pypi-install test upload uninstall
+.PHONY: dev integrate test
+
+dev:
+	rustup component add rustfmt
 
 integrate:
 	cargo run --bin mpersist -- search > /tmp/mpersist.stdout
