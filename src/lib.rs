@@ -1,27 +1,23 @@
 #[macro_use]
 extern crate lazy_static;
-#[macro_use]
-extern crate log;
 extern crate num_bigint;
 extern crate num_traits;
 
 use num_bigint::BigUint;
 use num_traits::Num;
-use std::sync::mpsc::Sender;
-use std::time::Instant;
 
 pub mod combinations_wr;
-
 use combinations_wr::CombinationsWithReplacement;
 
+static DIGITS_HEAD: &'static [&'static str; 4] = &["", "2", "3", "4"];
+static DIGITS_TAIL: &'static [char; 4] = &['6', '7', '8', '9'];
+
 lazy_static! {
-    static ref DIGITS_HEAD: &'static [&'static str; 4] = &["", "2", "3", "4"];
-    static ref DIGITS_TAIL: &'static [char; 4] = &['6', '7', '8', '9'];
     static ref BIG_UINT_NINE: BigUint = BigUint::from(9 as usize);
 }
 
 /// Multiply digits of an integer together and return the result.
-pub fn multiply_digits(a: &BigUint) -> BigUint {
+fn multiply_digits(a: &BigUint) -> BigUint {
     a.to_str_radix(10)
         .chars()
         .map(|c| BigUint::from(c.to_digit(10).expect("Could not convert char to digit.")))
@@ -53,7 +49,7 @@ pub struct SearchResult {
 /// - round 1: 6, 7, ..., 9, 26, 27, ..., 49
 /// - round 2: 66, 67, ..., 99, 266, 267, ..., 499
 #[derive(Debug, Clone)]
-pub struct Candidates<'a> {
+struct Candidates<'a> {
     // Cloneable tails iterator, used to restart tails multiple times
     fresh_tails: CombinationsWithReplacement<char>,
     // Heads that we need to iterate over once
@@ -105,7 +101,7 @@ impl<'a> Iterator for Candidates<'a> {
     }
 }
 
-struct SearchRound<'a> {
+pub struct SearchRound<'a> {
     candidates: Candidates<'a>,
     current_max: usize,
 }
@@ -141,20 +137,6 @@ impl<'a> Iterator for SearchRound<'a> {
             }
         }
     }
-}
-
-/// Search all candidates in a given round, and reopost
-pub fn search_round(tx: Sender<SearchResult>, n: usize) -> () {
-    let round_start = Instant::now();
-    for message in SearchRound::new(n) {
-        tx.send(message).expect("Failed to send SearchResult");
-    }
-
-    info!(
-        "info: round {} complete in {}ms",
-        n,
-        round_start.elapsed().as_millis()
-    );
 }
 
 #[cfg(test)]

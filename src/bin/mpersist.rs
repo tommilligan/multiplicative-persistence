@@ -1,15 +1,31 @@
 extern crate clap;
+#[macro_use]
+extern crate log;
 extern crate num_cpus;
 extern crate threadpool;
 
 extern crate multiplicative_persistence;
 
 use std::sync::mpsc::{channel, Receiver, Sender};
+use std::time::Instant;
 
 use clap::{App, Arg, SubCommand};
 use threadpool::ThreadPool;
 
-use multiplicative_persistence::{multiplicative_persistence, search_round, SearchResult};
+use multiplicative_persistence::{multiplicative_persistence, SearchResult, SearchRound};
+
+/// Consume a single search round, reporting results to the main thread.
+pub fn search_round(tx: Sender<SearchResult>, n: usize) -> () {
+    let round_start = Instant::now();
+    for result in SearchRound::new(n) {
+        tx.send(result).expect("Failed to send SearchResult");
+    }
+    info!(
+        "info: round {} complete in {}ms",
+        n,
+        round_start.elapsed().as_millis()
+    );
+}
 
 /// Multithreaded search for integers with higher multiplicative persistence values.
 fn search(from_round: usize, num_rounds: usize, n_workers: usize) -> () {
