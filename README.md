@@ -1,6 +1,6 @@
 # multiplicative-persistence
 
-![CircleCI branch](https://img.shields.io/circleci/project/github/tommilligan/multiplicative-persistence/master.svg)
+[![CircleCI branch](https://img.shields.io/circleci/project/github/tommilligan/multiplicative-persistence/master.svg)](https://circleci.com/gh/tommilligan/multiplicative-persistence)
 
 Search for integers with high multiplicative persistence values.
 
