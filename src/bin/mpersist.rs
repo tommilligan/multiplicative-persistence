@@ -1,6 +1,7 @@
 extern crate clap;
 #[macro_use]
 extern crate log;
+extern crate env_logger;
 extern crate num_cpus;
 extern crate threadpool;
 
@@ -62,6 +63,7 @@ fn search(from_round: usize, num_rounds: usize, n_workers: usize) -> () {
 }
 
 pub fn main() {
+    env_logger::init();
     let mut app = App::new("mpersist")
         .about("Find multiplicative persistence values")
         .subcommand(
