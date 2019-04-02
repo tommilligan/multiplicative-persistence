@@ -67,6 +67,32 @@ pub fn main() {
     let mut app = App::new("mpersist")
         .about("Find multiplicative persistence values")
         .subcommand(
+            SubCommand::with_name("for")
+                .about("Get multiplicative persistence for a positive integer")
+                .arg(
+                    Arg::with_name("candidate")
+                        .help("The integer to process")
+                        .index(1)
+                        .required(true),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("list")
+                .about("Get multiplicative persistence for a range of integers")
+                .arg(
+                    Arg::with_name("from_int")
+                        .help("Start of the range (inclusive)")
+                        .index(1)
+                        .required(true),
+                )
+                .arg(
+                    Arg::with_name("to_int")
+                        .help("Start of the range (exclusive)")
+                        .index(2)
+                        .required(true),
+                ),
+        )
+        .subcommand(
             SubCommand::with_name("search")
                 .about("Search for the lowest integer with each multiplicative persistence value")
                 .arg(
@@ -90,16 +116,6 @@ pub fn main() {
                         .short("t")
                         .long("threads"),
                 ),
-        )
-        .subcommand(
-            SubCommand::with_name("for")
-                .about("Get multiplicative persistence for a positive integer")
-                .arg(
-                    Arg::with_name("candidate")
-                        .help("The integer to process")
-                        .index(1)
-                        .required(true),
-                ),
         );
     let matches = app.clone().get_matches();
 
@@ -108,6 +124,25 @@ pub fn main() {
             "for" => {
                 let candidate: &str = subcommand_matches.value_of("candidate").unwrap();
                 println!("{}", multiplicative_persistence(candidate));
+            }
+            "list" => {
+                let from_int: usize = subcommand_matches
+                    .value_of("from_int")
+                    .unwrap()
+                    .parse()
+                    .expect("Invalid integer for from");
+                let to_int: usize = subcommand_matches
+                    .value_of("to_int")
+                    .unwrap()
+                    .parse()
+                    .expect("Invalid integer for to");
+                for candidate in from_int..to_int {
+                    println!(
+                        "{} {}",
+                        candidate,
+                        multiplicative_persistence(&candidate.to_string())
+                    );
+                }
             }
             "search" => {
                 let from_round: usize = subcommand_matches

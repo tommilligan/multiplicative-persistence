@@ -4,8 +4,7 @@ dev:
 	rustup component add rustfmt
 
 integrate:
-	cargo run --bin mpersist -- search > /tmp/mpersist.stdout
-	diff /tmp/mpersist.stdout integrate/mpersist.stdout
+	./integrate/check
 
 test:
 	cargo fmt -- --check

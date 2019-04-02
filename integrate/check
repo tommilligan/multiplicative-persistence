@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e
+
+log() {
+  echo $@ 1>&2
+}
+
+check() {
+  log "checking: $1"
+  local subcommand="$1"
+  local actual_file="/tmp/$2"
+  local expected_file="./integrate/$2"
+
+  cargo run --bin mpersist -- $subcommand > "$actual_file"
+  diff "$actual_file" "$expected_file"
+}
+
+check 'for 77' for.stdout
+check 'list 38 42' list.stdout
+check 'search' search.stdout
