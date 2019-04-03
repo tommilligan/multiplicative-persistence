@@ -19,3 +19,8 @@ check() {
 check 'for 77' for.stdout
 check 'list 38 42' list.stdout
 check 'search' search.stdout
+
+
+cargo run --bin mpersist -- list 0 100 |
+  cargo run --bin mp-visualize -- /tmp/visualize.png &&
+  sha512sum -c ./integrate/visualize.png.sha512
