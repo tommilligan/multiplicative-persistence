@@ -49,3 +49,7 @@ The `mp-visualize` binary reads the output of `mpersist list` from stdin, and la
 ./mpersist list 0 100000 | ./mp-visualize -d 0.5 -a 0.25 -r 4 -f 2.0 -w 900 shockwave.png
 ./mpersist list 0 25000 | ./mp-visualize -d 0.25 -a 0.25 -r 3.5 stars.png
 ```
+
+![visualization up to 3500](example/default.png)
+
+> A visualisation of the first 3500 integers and their mp values
