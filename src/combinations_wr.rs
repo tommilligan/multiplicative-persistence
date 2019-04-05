@@ -78,7 +78,7 @@ impl<T: Copy> Iterator for CombinationsWithReplacement<T> {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     #[test]

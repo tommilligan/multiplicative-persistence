@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -ex
+
+log() {
+  echo $@ 1>&2
+}
+
+TEST="test --locked"
+RAMP_BACKEND="--no-default-features --features backend-ramp"
+
+cargo $TEST
+cargo +nightly $TEST $RAMP_BACKEND
+
