@@ -1,5 +1,3 @@
-#[macro_use]
-extern crate lazy_static;
 extern crate num_bigint;
 extern crate num_traits;
 
@@ -12,26 +10,23 @@ use combinations_wr::CombinationsWithReplacement;
 static DIGITS_HEAD: &'static [&'static str; 4] = &["", "2", "3", "4"];
 static DIGITS_TAIL: &'static [char; 4] = &['6', '7', '8', '9'];
 
-lazy_static! {
-    static ref BIG_UINT_NINE: BigUint = BigUint::from(9 as usize);
-}
-
 /// Multiply digits of an integer together and return the result.
-fn multiply_digits(a: &BigUint) -> BigUint {
-    a.to_str_radix(10)
+fn multiply_digits(a: &BigUint, radix: u32) -> BigUint {
+    a.to_str_radix(radix)
         .chars()
-        .map(|c| BigUint::from(c.to_digit(10).expect("Could not convert char to digit.")))
+        .map(|c| BigUint::from(c.to_digit(radix).expect("Could not convert char to digit.")))
         .product()
 }
 
 /// Return the multiplicative persistence of a positive integer given as a string.
-pub fn multiplicative_persistence(candidate: &str) -> usize {
+pub fn multiplicative_persistence(candidate: &str, radix: u32) -> usize {
     let mut derived_int: BigUint =
         Num::from_str_radix(candidate, 10).expect("Could not convert candidate to BigUint");
 
     let mut counter: usize = 0;
-    while derived_int > *BIG_UINT_NINE {
-        derived_int = multiply_digits(&derived_int);
+    let stop_after = BigUint::from(radix);
+    while derived_int >= stop_after {
+        derived_int = multiply_digits(&derived_int, radix);
         counter += 1;
     }
     counter
@@ -123,7 +118,7 @@ impl<'a> Iterator for SearchRound<'a> {
         loop {
             match self.candidates.next() {
                 Some(candidate) => {
-                    let result = multiplicative_persistence(&candidate);
+                    let result = multiplicative_persistence(&candidate, 10);
                     // If we have a potentially better value, report it
                     if result > self.current_max {
                         self.current_max = result;
@@ -154,19 +149,24 @@ mod tests {
 
     #[test]
     fn test_multiplicative_persistence() {
-        assert_eq!(multiplicative_persistence("0"), 0);
-        assert_eq!(multiplicative_persistence("3"), 0);
-        assert_eq!(multiplicative_persistence("24"), 1);
-        assert_eq!(multiplicative_persistence("39"), 3);
-        assert_eq!(multiplicative_persistence(&TOO_LARGE_INT), 2);
+        assert_eq!(multiplicative_persistence("0", 10), 0);
+        assert_eq!(multiplicative_persistence("3", 10), 0);
+        assert_eq!(multiplicative_persistence("24", 10), 1);
+        assert_eq!(multiplicative_persistence("39", 10), 3);
+        assert_eq!(multiplicative_persistence(&TOO_LARGE_INT, 10), 2);
+
+        assert_eq!(multiplicative_persistence("24", 13), 1);
     }
 
     #[test]
     fn test_multiply_digits() {
-        assert_eq!(multiply_digits(&big(0)), big(0));
-        assert_eq!(multiply_digits(&big(3)), big(3));
-        assert_eq!(multiply_digits(&big(24)), big(8));
-        assert_eq!(multiply_digits(&big(12345)), big(120));
+        assert_eq!(multiply_digits(&big(0), 10), big(0));
+        assert_eq!(multiply_digits(&big(3), 10), big(3));
+        assert_eq!(multiply_digits(&big(24), 10), big(8));
+        assert_eq!(multiply_digits(&big(12345), 10), big(120));
+
+        assert_eq!(multiply_digits(&big(12345), 2), big(0));
+        assert_eq!(multiply_digits(&big(24), 13), big(11));
     }
 
     #[test]
