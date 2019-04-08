@@ -66,6 +66,13 @@ pub fn main() {
     env_logger::init();
     let mut app = App::new("mpersist")
         .about("Find multiplicative persistence values")
+        .arg(
+            Arg::with_name("radix")
+                .help("Radix (base) to use for string/int conversion")
+                .takes_value(true)
+                .short("r")
+                .long("radix"),
+        )
         .subcommand(
             SubCommand::with_name("for")
                 .about("Get multiplicative persistence for a positive integer")
@@ -120,10 +127,16 @@ pub fn main() {
     let matches = app.clone().get_matches();
 
     if let (subcommand_name, Some(subcommand_matches)) = matches.subcommand() {
+        let radix = matches
+            .value_of("radix")
+            .unwrap_or("10")
+            .parse()
+            .expect("Invalid integer for radix");
+        trace!("cli radix: {}", radix);
         match subcommand_name {
             "for" => {
                 let candidate: &str = subcommand_matches.value_of("candidate").unwrap();
-                println!("{}", multiplicative_persistence(candidate));
+                println!("{}", multiplicative_persistence(candidate, radix));
             }
             "list" => {
                 let from_int: usize = subcommand_matches
@@ -140,7 +153,7 @@ pub fn main() {
                     println!(
                         "{} {}",
                         candidate,
-                        multiplicative_persistence(&candidate.to_string())
+                        multiplicative_persistence(&candidate.to_string(), radix)
                     );
                 }
             }
