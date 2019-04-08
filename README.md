@@ -8,18 +8,6 @@ Search for integers with high multiplicative persistence values.
 
 This project uses the standard `rustup` and `cargo` toolchain. Originally tested against `rustc 1.33.0`.
 
-By default the library uses `num-bigint` internally. This can be swapped for `ramp` as a dependency by specifying:
-
-```
-multiplicative-persistence = { version = "*", features = ["backend-ramp"], default-features = false }
-```
-
-Or as a binary by building with:
-
-```bash
-cargo +nightly build --no-default-features --features backend-ramp
-```
-
 ## Usage
 
 Build binaries with `cargo build --release --bins`, they will be output in `target/release`:
