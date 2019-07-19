@@ -12,6 +12,6 @@ log = "^0.4.7"
 num-bigint = "^0.2.2"
 num-traits = "^0.2.8"
 num_cpus = "^1.10.1"
-png = "0.14.1"
+png = "0.15.0"
 threadpool = "^1.7.1"
 
