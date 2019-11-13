@@ -11,7 +11,7 @@ env_logger = "^0.7.1"
 log = "^0.4.8"
 num-bigint = "^0.2.3"
 num-traits = "^0.2.8"
-num_cpus = "^1.11.0"
+num_cpus = "^1.11.1"
 png = "0.15.0"
 threadpool = "^1.7.1"
 
