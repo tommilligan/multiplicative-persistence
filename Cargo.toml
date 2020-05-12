@@ -13,5 +13,5 @@ num-bigint = "^0.2.6"
 num-traits = "^0.2.11"
 num_cpus = "^1.13.0"
 png = "0.16.3"
-threadpool = "^1.8.0"
+threadpool = "^1.8.1"
 
