@@ -5,7 +5,7 @@ authors = ["Tom Milligan <tom@reinfer.io>"]
 edition = "2018"
 
 [dependencies]
-cairo-rs = { version = "0.8.1", features = ["png"] }
+cairo-rs = { version = "0.9.1", features = ["png"] }
 clap = "^2.33.0"
 env_logger = "^0.7.1"
 log = "^0.4.8"
