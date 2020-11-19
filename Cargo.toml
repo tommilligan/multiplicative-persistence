@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 cairo-rs = { version = "0.8.1", features = ["png"] }
 clap = "^2.33.0"
-env_logger = "^0.7.1"
+env_logger = "^0.8.2"
 log = "^0.4.8"
 num-bigint = "^0.2.6"
 num-traits = "^0.2.11"
